@@ -47,7 +47,7 @@ CREATE TABLE `barang` (
   `durasi_murid` int DEFAULT NULL COMMENT 'Batas waktu peminjaman murid (menit). NULL = bebas.',
   `durasi_guru` int DEFAULT NULL COMMENT 'Batas waktu peminjaman guru (menit). NULL = bebas.',
   `durasi_tendik` int DEFAULT NULL COMMENT 'Batas waktu peminjaman tendik (menit). NULL = bebas.'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `barang`
@@ -106,7 +106,7 @@ CREATE TABLE `detail_peminjaman` (
   `id_peminjaman` int DEFAULT NULL,
   `id_barang` int DEFAULT NULL,
   `jumlah` int NOT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -129,7 +129,7 @@ CREATE TABLE `peminjaman` (
   `waktu_kembali` time DEFAULT NULL,
   `status` enum('menunggu','dipinjam','menunggu_kembali','dikembalikan') DEFAULT 'menunggu',
   `kondisi_kembali` enum('baik','rusak_ringan','rusak_berat') DEFAULT NULL
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- --------------------------------------------------------
 
@@ -145,7 +145,7 @@ CREATE TABLE `pengguna` (
   `password` varchar(255) NOT NULL,
   `role` enum('admin','murid','guru','tendik') NOT NULL,
   `status` enum('aktif','pending','nonaktif') NOT NULL DEFAULT 'aktif'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `pengguna`
@@ -168,7 +168,7 @@ CREATE TABLE `ruangan` (
   `panjang` decimal(8,2) DEFAULT NULL,
   `lebar` decimal(8,2) DEFAULT NULL,
   `persentase_kerusakan` decimal(5,2) DEFAULT '0.00'
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_0900_ai_ci;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
 -- Dumping data for table `ruangan`
