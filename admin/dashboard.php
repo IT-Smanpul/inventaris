@@ -689,6 +689,7 @@ $today = date('l, d F Y');
     <a href="dashboard.php"    class="nav-link active">Dashboard</a>
     <a href="ruangan.php"      class="nav-link">Prasarana</a>
     <a href="barang.php"       class="nav-link">Sarana</a>
+    <a href="stok_habis_pakai.php" class="nav-link">Stok Habis Pakai</a>
     <a href="pengguna.php"     class="nav-link">
       Pengguna
       <?php if ($pending_count > 0): ?><span class="nav-badge"><?= $pending_count ?></span><?php endif; ?>
@@ -712,6 +713,7 @@ $today = date('l, d F Y');
   <a href="dashboard.php"      class="nav-link active">Dashboard</a>
   <a href="ruangan.php"        class="nav-link">Prasarana</a>
   <a href="barang.php"         class="nav-link">Sarana</a>
+  <a href="stok_habis_pakai.php" class="nav-link">Stok Habis Pakai</a>
   <a href="pengguna.php"       class="nav-link">
     Pengguna
     <?php if ($pending_count > 0): ?><span class="nav-badge"><?= $pending_count ?></span><?php endif; ?>
