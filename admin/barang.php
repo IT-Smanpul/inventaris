@@ -49,6 +49,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $kode            = trim(mysqli_real_escape_string($conn, $_POST['kode_barang']));
         $nama            = trim(mysqli_real_escape_string($conn, $_POST['nama_barang']));
         $id_r            = (int)$_POST['id_ruangan_barang'];
+        $kategori_raw    = $_POST['kategori'] ?? 'Barang Statis';
+        $kategori        = in_array($kategori_raw, ['Barang Statis','Barang Habis Pakai']) ? $kategori_raw : 'Barang Statis';
         $jumlah_laik     = max(0, (int)$_POST['jumlah_laik']);
         $jumlah_tdk_laik = max(0, (int)$_POST['jumlah_tidak_laik']);
         $jumlah          = $jumlah_laik + $jumlah_tdk_laik;
@@ -87,14 +89,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                    deskripsi, spesifikasi, bisa_dipinjam,
                    pinjam_murid, pinjam_guru, pinjam_tendik,
                    durasi_murid, durasi_guru, durasi_tendik,
-                   foto, sumber_dana, tanggal_pembelian)
+                   foto, kategori, sumber_dana, tanggal_pembelian)
                 VALUES
                   ($kode_sql,'$nama',$id_r_sql,
                    $jumlah,$jumlah_laik,$jumlah_tdk_laik,
                    $desk_sql,$spek_sql,$bisa_dipinjam,
                    $pinjam_murid,$pinjam_guru,$pinjam_tendik,
                    $durasi_murid,$durasi_guru,$durasi_tendik,
-                   $foto_sql,$sdana_sql,$tglbeli_sql)
+                   $foto_sql,'$kategori',$sdana_sql,$tglbeli_sql)
             ");
             $back = "barang.php" . ($id_ruangan ? "?ruangan=$id_ruangan&nama=".urlencode($nama_ruangan)."&" : '?');
             header("Location: {$back}success=".urlencode("Barang \"$nama\" berhasil ditambahkan."));
@@ -108,6 +110,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $kode            = trim(mysqli_real_escape_string($conn, $_POST['kode_barang']));
         $nama            = trim(mysqli_real_escape_string($conn, $_POST['nama_barang']));
         $id_r            = (int)$_POST['id_ruangan_barang'];
+        $kategori_raw    = $_POST['kategori'] ?? 'Barang Statis';
+        $kategori        = in_array($kategori_raw, ['Barang Statis','Barang Habis Pakai']) ? $kategori_raw : 'Barang Statis';
         $jumlah_laik     = max(0, (int)$_POST['jumlah_laik']);
         $jumlah_tdk_laik = max(0, (int)$_POST['jumlah_tidak_laik']);
         $jumlah          = $jumlah_laik + $jumlah_tdk_laik;
@@ -144,6 +148,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 UPDATE barang
                 SET kode_barang=$kode_sql, nama_barang='$nama',
                     id_ruangan=$id_r_sql,
+                    kategori='$kategori',
                     jumlah=$jumlah, jumlah_laik=$jumlah_laik,
                     jumlah_tidak_laik=$jumlah_tdk_laik,
                     deskripsi=$desk_sql, spesifikasi=$spek_sql,
@@ -769,6 +774,7 @@ $pm_menunggu   = mysqli_fetch_assoc(mysqli_query($conn,
             <th style="width:38px;">No</th>
             <th style="width:50px;">Foto</th>
             <th>Nama Sarana</th>
+            <th class="center" style="width:110px;">Kategori</th>
             <th style="width:115px;">Sumber &amp; Tanggal</th>
             <?php if (!$id_ruangan): ?><th style="width:110px;">Prasarana</th><?php endif; ?>
             <th class="center" style="width:52px;">Laik</th>
@@ -791,6 +797,7 @@ $pm_menunggu   = mysqli_fetch_assoc(mysqli_query($conn,
               'kode'              => $b['kode_barang'],
               'nama'              => $b['nama_barang'],
               'id_ruangan'        => $b['id_ruangan'],
+              'kategori'          => $b['kategori'] ?? 'Barang Statis',
               'deskripsi'         => $b['deskripsi']   ?? '',
               'spesifikasi'       => $b['spesifikasi']  ?? '',
               'jumlah_laik'       => $laik,
@@ -825,6 +832,20 @@ $pm_menunggu   = mysqli_fetch_assoc(mysqli_query($conn,
               <?php if (!empty($b['spesifikasi'])): ?>
                 <div style="font-size:11px;color:var(--muted);margin-top:2px;"><?= htmlspecialchars(mb_strimwidth($b['spesifikasi'],0,50,'…')) ?></div>
               <?php endif; ?>
+            </td>
+            <!-- Kategori -->
+            <td class="center">
+              <?php
+                $kat = $b['kategori'] ?? 'Barang Statis';
+                $kat_color = $kat === 'Barang Habis Pakai' ? '#D97706' : '#6366F1';
+                $kat_bg    = $kat === 'Barang Habis Pakai' ? '#FFFBEB' : '#EEF2FF';
+                $kat_border= $kat === 'Barang Habis Pakai' ? '#FDE68A' : '#C7D2FE';
+                $kat_icon  = $kat === 'Barang Habis Pakai' ? 'bi-arrow-repeat' : 'bi-box-seam';
+              ?>
+              <span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:20px;font-size:11px;font-weight:700;background:<?= $kat_bg ?>;color:<?= $kat_color ?>;border:1px solid <?= $kat_border ?>;white-space:nowrap;">
+                <i class="bi <?= $kat_icon ?>" style="font-size:11px;"></i>
+                <?= $kat === 'Barang Habis Pakai' ? 'Habis Pakai' : 'Statis' ?>
+              </span>
             </td>
             <!-- Sumber Dana + Tgl -->
             <td style="font-size:12px;">
@@ -867,7 +888,7 @@ $pm_menunggu   = mysqli_fetch_assoc(mysqli_query($conn,
           </tr>
           <?php endwhile; ?>
           <?php if (!$has): ?>
-          <tr><td colspan="<?= $id_ruangan ? 10 : 11 ?>">
+          <tr><td colspan="<?= $id_ruangan ? 11 : 12 ?>">
             <div class="empty-state">
               <i class="bi bi-inbox"></i>
               <h3><?= $search ? 'Tidak ditemukan' : 'Belum ada sarana' ?></h3>
@@ -892,6 +913,7 @@ $pm_menunggu   = mysqli_fetch_assoc(mysqli_query($conn,
           'kode'            => $b2['kode_barang'],
           'nama'            => $b2['nama_barang'],
           'id_ruangan'      => $b2['id_ruangan'],
+          'kategori'        => $b2['kategori'] ?? 'Barang Statis',
           'deskripsi'       => $b2['deskripsi']   ?? '',
           'spesifikasi'     => $b2['spesifikasi']  ?? '',
           'jumlah_laik'     => $laik2,
@@ -914,6 +936,17 @@ $pm_menunggu   = mysqli_fetch_assoc(mysqli_query($conn,
           <?php if (!$id_ruangan && $b2['nama_ruangan']): ?>
             <span style="font-size:11px;color:var(--muted);"><i class="bi bi-building"></i> <?= htmlspecialchars($b2['nama_ruangan']) ?></span>
           <?php endif; ?>
+          <?php
+            $kat2 = $b2['kategori'] ?? 'Barang Statis';
+            $kat2_color = $kat2 === 'Barang Habis Pakai' ? '#D97706' : '#6366F1';
+            $kat2_bg    = $kat2 === 'Barang Habis Pakai' ? '#FFFBEB' : '#EEF2FF';
+            $kat2_border= $kat2 === 'Barang Habis Pakai' ? '#FDE68A' : '#C7D2FE';
+            $kat2_icon  = $kat2 === 'Barang Habis Pakai' ? 'bi-arrow-repeat' : 'bi-box-seam';
+          ?>
+          <span style="display:inline-flex;align-items:center;gap:4px;padding:3px 9px;border-radius:20px;font-size:10px;font-weight:700;background:<?= $kat2_bg ?>;color:<?= $kat2_color ?>;border:1px solid <?= $kat2_border ?>;">
+            <i class="bi <?= $kat2_icon ?>" style="font-size:10px;"></i>
+            <?= $kat2 === 'Barang Habis Pakai' ? 'Habis Pakai' : 'Statis' ?>
+          </span>
         </div>
         <div class="mobile-qty-row">
           <span class="mobile-qty-chip chip-laik"><i class="bi bi-check-circle" style="font-size:11px;"></i> Laik: <?= $laik2 ?></span>
@@ -979,6 +1012,13 @@ $pm_menunggu   = mysqli_fetch_assoc(mysqli_query($conn,
               <?= htmlspecialchars($rv['nama_ruangan']) ?>
             </option>
             <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Kategori <span style="color:#DC2626;">*</span></label>
+          <select name="kategori" id="addKategori" class="form-control" required>
+            <option value="Barang Statis">Barang Statis</option>
+            <option value="Barang Habis Pakai">Barang Habis Pakai</option>
           </select>
         </div>
       </div>
@@ -1120,6 +1160,13 @@ $pm_menunggu   = mysqli_fetch_assoc(mysqli_query($conn,
             <?php foreach ($ruangan_all as $rv): ?>
             <option value="<?= $rv['id_ruangan'] ?>"><?= htmlspecialchars($rv['nama_ruangan']) ?></option>
             <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="form-group" style="margin-bottom:0;">
+          <label class="form-label">Kategori <span style="color:#DC2626;">*</span></label>
+          <select name="kategori" id="editKategori" class="form-control" required>
+            <option value="Barang Statis">Barang Statis</option>
+            <option value="Barang Habis Pakai">Barang Habis Pakai</option>
           </select>
         </div>
       </div>
@@ -1310,6 +1357,7 @@ $pm_menunggu   = mysqli_fetch_assoc(mysqli_query($conn,
     document.getElementById('editKode').value            = data.kode||'';
     document.getElementById('editNama').value            = data.nama||'';
     document.getElementById('editRuangan').value         = data.id_ruangan||'';
+    document.getElementById('editKategori').value         = data.kategori||'Barang Statis';
     document.getElementById('editLaik').value            = data.jumlah_laik||0;
     document.getElementById('editTdkLaik').value         = data.jumlah_tidak_laik||0;
     document.getElementById('editDeskripsi').value       = data.deskripsi||'';
