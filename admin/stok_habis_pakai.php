@@ -119,6 +119,23 @@ $stat_menipis  = (int)mysqli_fetch_assoc(mysqli_query($conn,
 /* ── Riwayat stok terbaru ── */
 $cek_tabel_riwayat = mysqli_query($conn, "SHOW TABLES LIKE 'riwayat_stok'");
 $riwayat_exists = mysqli_num_rows($cek_tabel_riwayat) > 0;
+if (!$riwayat_exists) {
+    mysqli_query($conn, "CREATE TABLE IF NOT EXISTS `riwayat_stok` (
+      `id_riwayat` int NOT NULL AUTO_INCREMENT,
+      `id_barang` int NOT NULL,
+      `jenis` enum('masuk','keluar') NOT NULL,
+      `jumlah` int NOT NULL,
+      `stok_sebelum` int NOT NULL DEFAULT '0',
+      `stok_sesudah` int NOT NULL DEFAULT '0',
+      `keterangan` text,
+      `tanggal` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      PRIMARY KEY (`id_riwayat`),
+      KEY `id_barang` (`id_barang`),
+      CONSTRAINT `riwayat_stok_ibfk_1` FOREIGN KEY (`id_barang`) REFERENCES `barang` (`id_barang`) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci");
+    $riwayat_exists = true;
+}
+
 $riwayat_list = [];
 if ($riwayat_exists) {
     $riwayat_q = mysqli_query($conn, "
@@ -130,6 +147,65 @@ if ($riwayat_exists) {
     ");
     while ($rw = mysqli_fetch_assoc($riwayat_q)) $riwayat_list[] = $rw;
 }
+
+/* ── Data Chart Persebaran Penggunaan Barang Habis Pakai (1 Bulan) ── */
+$chart_periode = $_GET['chart_periode'] ?? '1_bulan';
+$chart_where   = "rs.jenis = 'keluar'";
+if ($chart_periode === 'bulan_ini') {
+    $chart_where  .= " AND DATE_FORMAT(rs.tanggal, '%Y-%m') = DATE_FORMAT(NOW(), '%Y-%m')";
+    $periode_label = "Bulan Ini (" . date('F Y') . ")";
+} elseif ($chart_periode === 'bulan_lalu') {
+    $chart_where  .= " AND DATE_FORMAT(rs.tanggal, '%Y-%m') = DATE_FORMAT(DATE_SUB(NOW(), INTERVAL 1 MONTH), '%Y-%m')";
+    $periode_label = "Bulan Lalu (" . date('F Y', strtotime('-1 month')) . ")";
+} elseif ($chart_periode === '7_hari') {
+    $chart_where  .= " AND rs.tanggal >= DATE_SUB(NOW(), INTERVAL 7 DAY)";
+    $periode_label = "7 Hari Terakhir";
+} elseif ($chart_periode === 'semua') {
+    $periode_label = "Semua Waktu";
+} else {
+    $chart_periode = '1_bulan';
+    $chart_where  .= " AND rs.tanggal >= DATE_SUB(NOW(), INTERVAL 1 MONTH)";
+    $periode_label = "1 Bulan Terakhir (30 Hari)";
+}
+
+$chart_palette = [
+    '#2563EB', '#10B981', '#F59E0B', '#8B5CF6', '#EC4899',
+    '#06B6D4', '#F97316', '#14B8A6', '#6366F1', '#84CC16',
+    '#E11D48', '#0D9488', '#D97706', '#4F46E5', '#64748B'
+];
+
+$chart_items         = [];
+$chart_labels        = [];
+$chart_values        = [];
+$chart_colors        = [];
+$total_unit_terpakai = 0;
+
+if ($riwayat_exists) {
+    $chart_data_q = mysqli_query($conn, "
+        SELECT rs.id_barang, b.nama_barang, b.kode_barang,
+               SUM(rs.jumlah) as total_keluar,
+               COUNT(rs.id_riwayat) as kali_transaksi
+        FROM riwayat_stok rs
+        JOIN barang b ON rs.id_barang = b.id_barang
+        WHERE $chart_where
+        GROUP BY rs.id_barang
+        ORDER BY total_keluar DESC
+    ");
+    if ($chart_data_q) {
+        $idx = 0;
+        while ($crow = mysqli_fetch_assoc($chart_data_q)) {
+            $color = $chart_palette[$idx % count($chart_palette)];
+            $crow['color'] = $color;
+            $chart_items[]  = $crow;
+            $chart_labels[] = $crow['nama_barang'];
+            $chart_values[] = (int)$crow['total_keluar'];
+            $chart_colors[] = $color;
+            $total_unit_terpakai += (int)$crow['total_keluar'];
+            $idx++;
+        }
+    }
+}
+$total_jenis_terpakai = count($chart_items);
 
 $pending_count = (int)mysqli_fetch_assoc(mysqli_query($conn,
     "SELECT COUNT(*) as t FROM pengguna WHERE status='pending'"))['t'];
@@ -145,6 +221,7 @@ $pm_menunggu   = (int)mysqli_fetch_assoc(mysqli_query($conn,
   <link rel="icon" href="../assets/logo.png">
   <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700;800;900&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
     :root{
@@ -328,6 +405,38 @@ $pm_menunggu   = (int)mysqli_fetch_assoc(mysqli_query($conn,
     .riwayat-text-sub{font-size:11px;color:var(--muted);margin-top:2px;}
     .riwayat-val{font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:800;white-space:nowrap;}
 
+    /* ── CHART PERSEBARAN ── */
+    .chart-section-card{margin-bottom:24px;}
+    .chart-period-select{padding:6px 28px 6px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:700;color:var(--text);background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%236B7C93' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") no-repeat right 8px center;appearance:none;cursor:pointer;outline:none;font-family:'DM Sans',sans-serif;transition:border-color .2s;}
+    .chart-period-select:focus{border-color:var(--blue);}
+    .chart-summary-strip{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px;}
+    .chart-summary-item{display:flex;align-items:center;gap:12px;background:#F8FAFD;border:1px solid var(--border);border-radius:12px;padding:11px 15px;}
+    .cs-icon{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:17px;flex-shrink:0;}
+    .cs-val{font-family:'Plus Jakarta Sans',sans-serif;font-size:18px;font-weight:800;color:var(--text);line-height:1.2;}
+    .cs-lbl{font-size:11px;color:var(--muted);margin-top:1px;}
+    .chart-grid-layout{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-bottom:20px;}
+    .chart-box{background:#FFFFFF;border:1px solid var(--border);border-radius:12px;padding:16px;display:flex;flex-direction:column;}
+    .chart-box-title{font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;color:var(--text);display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+    .chart-canvas-wrap{position:relative;height:240px;width:100%;}
+
+    /* ── BREAKDOWN LIST ── */
+    .chart-breakdown-card{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:#FFFFFF;}
+    .breakdown-header{padding:12px 16px;background:#F8FAFD;border-bottom:1px solid var(--border);font-family:'Plus Jakarta Sans',sans-serif;font-size:12px;font-weight:800;color:var(--text);display:flex;align-items:center;justify-content:space-between;}
+    .breakdown-item{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--border);font-size:12px;transition:background .12s;}
+    .breakdown-item:last-child{border-bottom:none;}
+    .breakdown-item:hover{background:#F8FAFD;}
+    .breakdown-rank{width:22px;height:22px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;background:#EEF2FF;color:#6366F1;flex-shrink:0;}
+    .breakdown-rank.top-1{background:#FEF3C7;color:#D97706;}
+    .breakdown-rank.top-2{background:#F3F4F6;color:#4B5563;}
+    .breakdown-rank.top-3{background:#FFEDD5;color:#C2410C;}
+    .breakdown-color-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+    .breakdown-name{flex:1;font-weight:600;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+    .breakdown-bar-wrap{flex:1.5;min-width:80px;display:flex;align-items:center;gap:8px;}
+    .breakdown-bar{flex:1;height:7px;background:#E5E7EB;border-radius:99px;overflow:hidden;}
+    .breakdown-bar-fill{height:100%;border-radius:99px;}
+    .breakdown-pct{font-size:11px;font-weight:700;color:var(--muted);width:42px;text-align:right;}
+    .breakdown-qty{font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:800;color:var(--text);text-align:right;min-width:65px;}
+
     footer{background:var(--blue-deep);color:rgba(255,255,255,.55);text-align:center;padding:20px;font-size:12px;}
 
     @media(max-width:768px){
@@ -343,6 +452,9 @@ $pm_menunggu   = (int)mysqli_fetch_assoc(mysqli_query($conn,
       .pag-btns{width:100%;justify-content:center;}
       .modal-box{margin:10px;padding:20px 16px;border-radius:16px;max-width:100%;}
       .summary-row{grid-template-columns:repeat(2,1fr);}
+      .chart-grid-layout{grid-template-columns:1fr;}
+      .breakdown-bar-wrap{display:none;}
+      .chart-canvas-wrap{height:210px;}
     }
   </style>
 </head>
@@ -428,6 +540,141 @@ $pm_menunggu   = (int)mysqli_fetch_assoc(mysqli_query($conn,
     </div>
   </div>
 
+  <!-- Chart Persebaran Penggunaan 1 Bulan -->
+  <div class="card chart-section-card">
+    <div class="card-header" style="flex-wrap:wrap;gap:12px;">
+      <div>
+        <div class="card-title" style="font-size:16px;">
+          <i class="bi bi-pie-chart-fill" style="color:var(--blue-dark);"></i>
+          Persebaran Penggunaan Barang Habis Pakai
+        </div>
+        <div style="font-size:12px;color:var(--muted);margin-top:2px;">
+          Distribusi dan volume pemakaian barang habis pakai dalam <strong style="color:var(--text);"><?= htmlspecialchars($periode_label) ?></strong>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+        <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Periode:</span>
+        <select class="chart-period-select" onchange="changeChartPeriode(this.value)">
+          <option value="1_bulan" <?= $chart_periode==='1_bulan'?'selected':'' ?>>1 Bulan Terakhir (30 Hari)</option>
+          <option value="bulan_ini" <?= $chart_periode==='bulan_ini'?'selected':'' ?>>Bulan Ini (<?= date('M Y') ?>)</option>
+          <option value="bulan_lalu" <?= $chart_periode==='bulan_lalu'?'selected':'' ?>>Bulan Lalu</option>
+          <option value="7_hari" <?= $chart_periode==='7_hari'?'selected':'' ?>>7 Hari Terakhir</option>
+          <option value="semua" <?= $chart_periode==='semua'?'selected':'' ?>>Semua Waktu</option>
+        </select>
+      </div>
+    </div>
+
+    <?php if ($total_unit_terpakai > 0): ?>
+    <div style="padding:20px;">
+      <!-- Summary Strip -->
+      <div class="chart-summary-strip">
+        <div class="chart-summary-item">
+          <div class="cs-icon" style="background:#EFF6FF;color:#2563EB;"><i class="bi bi-box-arrow-up"></i></div>
+          <div>
+            <div class="cs-val"><?= number_format($total_unit_terpakai) ?> <span style="font-size:12px;font-weight:500;color:var(--muted);">unit</span></div>
+            <div class="cs-lbl">Total Unit Digunakan</div>
+          </div>
+        </div>
+        <div class="chart-summary-item">
+          <div class="cs-icon" style="background:#ECFDF5;color:#10B981;"><i class="bi bi-tags"></i></div>
+          <div>
+            <div class="cs-val"><?= number_format($total_jenis_terpakai) ?> <span style="font-size:12px;font-weight:500;color:var(--muted);">jenis</span></div>
+            <div class="cs-lbl">Jenis Barang Terpakai</div>
+          </div>
+        </div>
+        <?php if (!empty($chart_items)): ?>
+        <div class="chart-summary-item">
+          <div class="cs-icon" style="background:#FEF3C7;color:#D97706;"><i class="bi bi-trophy"></i></div>
+          <div>
+            <div class="cs-val" style="font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;" title="<?= htmlspecialchars($chart_items[0]['nama_barang']) ?>">
+              <?= htmlspecialchars($chart_items[0]['nama_barang']) ?>
+            </div>
+            <div class="cs-lbl">Terbanyak (<?= number_format($chart_items[0]['total_keluar']) ?> unit)</div>
+          </div>
+        </div>
+        <?php endif; ?>
+      </div>
+
+      <!-- Chart Grid Layout -->
+      <div class="chart-grid-layout">
+        <!-- Doughnut: Proporsi Persebaran -->
+        <div class="chart-box">
+          <div class="chart-box-title">
+            <span><i class="bi bi-pie-chart" style="color:var(--blue-dark);"></i> Proporsi Persebaran (%)</span>
+            <span style="font-size:11px;font-weight:600;color:var(--muted);"><?= $total_jenis_terpakai ?> item</span>
+          </div>
+          <div class="chart-canvas-wrap">
+            <canvas id="chartPersebaranDoughnut"></canvas>
+          </div>
+        </div>
+
+        <!-- Horizontal Bar: Volume Unit -->
+        <div class="chart-box">
+          <div class="chart-box-title">
+            <span><i class="bi bi-bar-chart-steps" style="color:var(--green);"></i> Volume Penggunaan (Unit)</span>
+            <span style="font-size:11px;font-weight:600;color:var(--muted);">Perbandingan Barang</span>
+          </div>
+          <div class="chart-canvas-wrap">
+            <canvas id="chartPersebaranBar"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Breakdown Ranking List -->
+      <div class="chart-breakdown-card">
+        <div class="breakdown-header">
+          <span><i class="bi bi-list-ol"></i> Rincian Pemakaian per Barang</span>
+          <span style="font-size:11px;font-weight:600;color:var(--muted);">Diurutkan dari pemakaian terbanyak</span>
+        </div>
+        <?php
+        $rank = 1;
+        foreach ($chart_items as $ci):
+          $pct = $total_unit_terpakai > 0 ? round(($ci['total_keluar'] / $total_unit_terpakai) * 100, 1) : 0;
+          $rank_class = $rank === 1 ? 'top-1' : ($rank === 2 ? 'top-2' : ($rank === 3 ? 'top-3' : ''));
+        ?>
+        <div class="breakdown-item">
+          <div class="breakdown-rank <?= $rank_class ?>">#<?= $rank ?></div>
+          <div class="breakdown-color-dot" style="background:<?= $ci['color'] ?>;"></div>
+          <div class="breakdown-name" title="<?= htmlspecialchars($ci['nama_barang']) ?>">
+            <?= htmlspecialchars($ci['nama_barang']) ?>
+            <?php if (!empty($ci['kode_barang'])): ?>
+              <span style="font-size:10px;color:var(--muted);font-weight:400;margin-left:4px;">(<?= htmlspecialchars($ci['kode_barang']) ?>)</span>
+            <?php endif; ?>
+          </div>
+          <div class="breakdown-bar-wrap">
+            <div class="breakdown-bar">
+              <div class="breakdown-bar-fill" style="width:<?= $pct ?>%;background:<?= $ci['color'] ?>;"></div>
+            </div>
+            <div class="breakdown-pct"><?= $pct ?>%</div>
+          </div>
+          <div class="breakdown-qty" style="color:<?= $ci['color'] ?>;">
+            <?= number_format($ci['total_keluar']) ?> <span style="font-size:11px;font-weight:500;color:var(--muted);">unit</span>
+          </div>
+        </div>
+        <?php $rank++; endforeach; ?>
+      </div>
+    </div>
+
+    <?php else: ?>
+    <!-- Empty State for Chart -->
+    <div style="padding:46px 20px;text-align:center;">
+      <div style="width:68px;height:68px;border-radius:50%;background:#F0F7FF;border:2px dashed var(--border);display:inline-flex;align-items:center;justify-content:center;font-size:30px;color:var(--blue-dark);margin-bottom:14px;">
+        <i class="bi bi-pie-chart"></i>
+      </div>
+      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;font-weight:800;color:var(--text);margin-bottom:6px;">
+        Belum Ada Data Penggunaan dalam Periode Ini
+      </div>
+      <div style="font-size:13px;color:var(--muted);max-width:480px;margin:0 auto 16px;line-height:1.6;">
+        Tidak ada barang habis pakai yang tercatat digunakan/keluar dalam <strong><?= htmlspecialchars($periode_label) ?></strong>.<br>
+        Data visualisasi chart akan terisi otomatis saat Anda mencatat pengurangan stok melalui tombol <strong>Update Stok &rarr; Kurangi Stok</strong> pada tabel di bawah.
+      </div>
+      <div style="display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--blue-dark);background:#EFF6FF;padding:7px 16px;border-radius:20px;font-weight:600;">
+        <i class="bi bi-calendar3"></i> Periode terpilih: <?= htmlspecialchars($periode_label) ?>
+      </div>
+    </div>
+    <?php endif; ?>
+  </div>
+
   <!-- Toolbar -->
   <div class="toolbar">
     <div class="toolbar-row">
@@ -435,6 +682,7 @@ $pm_menunggu   = (int)mysqli_fetch_assoc(mysqli_query($conn,
         <?php if ($filter_ruangan): ?><input type="hidden" name="filter_ruangan" value="<?= $filter_ruangan ?>"><?php endif; ?>
         <?php if ($filter_stok): ?><input type="hidden" name="filter_stok" value="<?= $filter_stok ?>"><?php endif; ?>
         <?php if ($per_page!=10): ?><input type="hidden" name="per_page" value="<?= $per_page ?>"><?php endif; ?>
+        <?php if ($chart_periode!=='1_bulan'): ?><input type="hidden" name="chart_periode" value="<?= htmlspecialchars($chart_periode) ?>"><?php endif; ?>
         <div class="search-wrap-inner">
           <i class="bi bi-search search-icon"></i>
           <input type="text" name="q" id="searchInputStok" value="<?= htmlspecialchars($search) ?>"
@@ -613,6 +861,7 @@ $pm_menunggu   = (int)mysqli_fetch_assoc(mysqli_query($conn,
         $bu = '?' . ($filter_ruangan ? "filter_ruangan=$filter_ruangan&" : '')
             . ($filter_stok ? "filter_stok=$filter_stok&" : '')
             . ($search ? "q=".urlencode($search)."&" : '')
+            . ($chart_periode!=='1_bulan' ? "chart_periode=".urlencode($chart_periode)."&" : '')
             . ($per_page!=10 ? "per_page=$per_page&" : '');
         ?>
         <a href="<?= $bu ?>page=<?= $page-1 ?>" class="pag-btn pag-btn-text <?= $page<=1?'disabled':'' ?>"><i class="bi bi-chevron-left"></i> Prev</a>
@@ -806,6 +1055,138 @@ $pm_menunggu   = (int)mysqli_fetch_assoc(mysqli_query($conn,
     url.searchParams.set('page', '1');
     window.location.href = url.toString();
   }
+
+  /* ── Chart Periode Handler ── */
+  function changeChartPeriode(val) {
+    const url = new URL(window.location.href);
+    if (val && val !== '1_bulan') url.searchParams.set('chart_periode', val);
+    else url.searchParams.delete('chart_periode');
+    url.searchParams.set('page', '1');
+    window.location.href = url.toString();
+  }
+
+  <?php if ($total_unit_terpakai > 0): ?>
+  /* ── Chart Defaults ── */
+  Chart.defaults.font.family = "'DM Sans', sans-serif";
+  Chart.defaults.color = '#6B7C93';
+
+  const chartLabels = <?= json_encode($chart_labels) ?>;
+  const chartValues = <?= json_encode($chart_values) ?>;
+  const chartColors = <?= json_encode($chart_colors) ?>;
+  const totalUnit   = <?= (int)$total_unit_terpakai ?>;
+
+  // 1. Doughnut Chart: Persebaran Persentase
+  const ctxDoughnut = document.getElementById('chartPersebaranDoughnut');
+  if (ctxDoughnut) {
+    new Chart(ctxDoughnut, {
+      type: 'doughnut',
+      data: {
+        labels: chartLabels,
+        datasets: [{
+          data: chartValues,
+          backgroundColor: chartColors,
+          borderColor: '#FFFFFF',
+          borderWidth: 2.5,
+          hoverOffset: 6
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        cutout: '62%',
+        plugins: {
+          legend: {
+            position: 'bottom',
+            labels: {
+              boxWidth: 10,
+              padding: 10,
+              font: { family: "'DM Sans', sans-serif", size: 11, weight: '600' },
+              generateLabels: function(chart) {
+                const original = Chart.overrides.doughnut.plugins.legend.labels.generateLabels(chart);
+                return original.map(item => {
+                  const val = chart.data.datasets[0].data[item.index] || 0;
+                  const pct = totalUnit > 0 ? Math.round((val / totalUnit) * 100) : 0;
+                  item.text = `${item.text} (${pct}%)`;
+                  return item;
+                });
+              }
+            }
+          },
+          tooltip: {
+            backgroundColor: '#1B2D45',
+            padding: 11,
+            cornerRadius: 8,
+            titleFont: { family: "'Plus Jakarta Sans', sans-serif", size: 12, weight: '700' },
+            bodyFont: { family: "'DM Sans', sans-serif", size: 12 },
+            callbacks: {
+              label: function(ctx) {
+                const val = ctx.raw || 0;
+                const pct = totalUnit > 0 ? ((val / totalUnit) * 100).toFixed(1) : 0;
+                return ` Digunakan: ${val.toLocaleString()} unit (${pct}%)`;
+              }
+            }
+          }
+        }
+      }
+    });
+  }
+
+  // 2. Horizontal Bar Chart: Volume Unit
+  const ctxBar = document.getElementById('chartPersebaranBar');
+  if (ctxBar) {
+    new Chart(ctxBar, {
+      type: 'bar',
+      data: {
+        labels: chartLabels,
+        datasets: [{
+          label: 'Jumlah Digunakan',
+          data: chartValues,
+          backgroundColor: chartColors,
+          borderRadius: 6,
+          borderSkipped: false
+        }]
+      },
+      options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#1B2D45',
+            padding: 11,
+            cornerRadius: 8,
+            titleFont: { family: "'Plus Jakarta Sans', sans-serif", size: 12, weight: '700' },
+            bodyFont: { family: "'DM Sans', sans-serif", size: 12 },
+            callbacks: {
+              label: function(ctx) {
+                return ` Terpakai: ${ctx.raw.toLocaleString()} unit`;
+              }
+            }
+          }
+        },
+        scales: {
+          x: {
+            beginAtZero: true,
+            ticks: {
+              stepSize: 1,
+              font: { family: "'DM Sans', sans-serif", size: 11 },
+              color: '#6B7C93'
+            },
+            grid: { color: 'rgba(208,228,245,.4)' }
+          },
+          y: {
+            ticks: {
+              font: { family: "'DM Sans', sans-serif", size: 11, weight: '600' },
+              color: '#1B2D45'
+            },
+            grid: { display: false }
+          }
+        }
+      }
+    });
+  }
+  <?php endif; ?>
 
   /* ── BFCache Fix ── */
   window.addEventListener('pageshow', function(e) {
