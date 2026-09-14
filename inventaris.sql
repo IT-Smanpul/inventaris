@@ -42,6 +42,7 @@ CREATE TABLE `barang` (
   `pinjam_guru` tinyint(1) DEFAULT '1',
   `pinjam_tendik` tinyint(1) DEFAULT '1',
   `foto` varchar(255) DEFAULT NULL,
+  `kategori` enum('Barang Statis','Barang Habis Pakai') NOT NULL DEFAULT 'Barang Statis',
   `sumber_dana` varchar(150) DEFAULT NULL,
   `tanggal_pembelian` date DEFAULT NULL,
   `durasi_murid` int DEFAULT NULL COMMENT 'Batas waktu peminjaman murid (menit). NULL = bebas.',
