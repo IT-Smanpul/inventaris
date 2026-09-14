@@ -851,6 +851,7 @@ $pending_count = mysqli_fetch_assoc(mysqli_query($conn,
     <a href="dashboard.php"    class="nav-link">Dashboard</a>
     <a href="ruangan.php"      class="nav-link">Prasarana</a>
     <a href="barang.php"       class="nav-link">Sarana</a>
+    <a href="stok_habis_pakai.php" class="nav-link">Stok Habis Pakai</a>
     <a href="pengguna.php"     class="nav-link active">
       Pengguna
       <?php if ($pending_count > 0): ?><span class="nav-badge"><?= $pending_count ?></span><?php endif; ?>
@@ -874,6 +875,7 @@ $pending_count = mysqli_fetch_assoc(mysqli_query($conn,
   <a href="dashboard.php"      class="nav-link">Dashboard</a>
   <a href="ruangan.php"        class="nav-link">Prasarana</a>
   <a href="barang.php"         class="nav-link">Sarana</a>
+  <a href="stok_habis_pakai.php" class="nav-link">Stok Habis Pakai</a>
   <a href="pengguna.php"       class="nav-link active">
     Pengguna
     <?php if ($pending_count > 0): ?><span class="nav-badge"><?= $pending_count ?></span><?php endif; ?>
