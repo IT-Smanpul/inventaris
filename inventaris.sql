@@ -329,6 +329,43 @@ ALTER TABLE `detail_peminjaman`
 --
 ALTER TABLE `peminjaman`
   ADD CONSTRAINT `peminjaman_ibfk_1` FOREIGN KEY (`id_pengguna`) REFERENCES `pengguna` (`id_pengguna`);
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `riwayat_stok`
+--
+
+CREATE TABLE `riwayat_stok` (
+  `id_riwayat` int NOT NULL,
+  `id_barang` int NOT NULL,
+  `jenis` enum('masuk','keluar') NOT NULL,
+  `jumlah` int NOT NULL,
+  `stok_sebelum` int NOT NULL DEFAULT '0',
+  `stok_sesudah` int NOT NULL DEFAULT '0',
+  `keterangan` text,
+  `tanggal` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Indexes for table `riwayat_stok`
+--
+ALTER TABLE `riwayat_stok`
+  ADD PRIMARY KEY (`id_riwayat`),
+  ADD KEY `id_barang` (`id_barang`);
+
+--
+-- AUTO_INCREMENT for table `riwayat_stok`
+--
+ALTER TABLE `riwayat_stok`
+  MODIFY `id_riwayat` int NOT NULL AUTO_INCREMENT;
+
+--
+-- Constraints for table `riwayat_stok`
+--
+ALTER TABLE `riwayat_stok`
+  ADD CONSTRAINT `riwayat_stok_ibfk_1` FOREIGN KEY (`id_barang`) REFERENCES `barang` (`id_barang`) ON DELETE CASCADE;
+
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
