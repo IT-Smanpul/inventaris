@@ -148,6 +148,12 @@ if ($riwayat_exists) {
     while ($rw = mysqli_fetch_assoc($riwayat_q)) $riwayat_list[] = $rw;
 }
 
+/* ── Tab Aktif (Menu Utama vs Persebaran Penggunaan) ── */
+$active_tab = isset($_GET['tab']) && $_GET['tab'] === 'persebaran' ? 'persebaran' : 'utama';
+if (isset($_GET['chart_periode']) && !isset($_GET['tab'])) {
+    $active_tab = 'persebaran';
+}
+
 /* ── Data Chart Persebaran Penggunaan Barang Habis Pakai (1 Bulan) ── */
 $chart_periode = $_GET['chart_periode'] ?? '1_bulan';
 $chart_where   = "rs.jenis = 'keluar'";
@@ -405,6 +411,18 @@ $pm_menunggu   = (int)mysqli_fetch_assoc(mysqli_query($conn,
     .riwayat-text-sub{font-size:11px;color:var(--muted);margin-top:2px;}
     .riwayat-val{font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:800;white-space:nowrap;}
 
+    /* ── VIEW TABS ── */
+    .view-tabs-wrap{margin-bottom:22px;display:flex;align-items:center;justify-content:flex-start;}
+    .view-tabs{display:inline-flex;background:#E8F1FA;padding:5px;border-radius:12px;gap:6px;border:1.5px solid var(--border);}
+    .view-tab-btn{display:inline-flex;align-items:center;gap:8px;padding:9px 20px;border-radius:9px;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;color:var(--muted);background:transparent;border:none;cursor:pointer;transition:all .2s ease;white-space:nowrap;}
+    .view-tab-btn:hover{color:var(--text);background:rgba(255,255,255,.5);}
+    .view-tab-btn.active{color:var(--blue-deep);background:#FFFFFF;box-shadow:0 2px 8px rgba(27,63,110,.12);}
+    .view-tab-btn i{font-size:15px;}
+    .view-tab-badge{display:inline-flex;align-items:center;padding:2px 7px;border-radius:12px;font-size:10px;font-weight:800;background:#EFF6FF;color:#2563EB;margin-left:2px;}
+    .view-tab-btn.active .view-tab-badge{background:#DBEAFE;color:#1D4ED8;}
+    .tab-content{animation:fadeInTab .22s cubic-bezier(.4,0,.2,1);}
+    @keyframes fadeInTab{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
     /* ── CHART PERSEBARAN ── */
     .chart-section-card{margin-bottom:24px;}
     .chart-period-select{padding:6px 28px 6px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:12px;font-weight:700;color:var(--text);background:var(--card) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24'%3E%3Cpath fill='%236B7C93' d='M7 10l5 5 5-5z'/%3E%3C/svg%3E") no-repeat right 8px center;appearance:none;cursor:pointer;outline:none;font-family:'DM Sans',sans-serif;transition:border-color .2s;}
@@ -455,6 +473,8 @@ $pm_menunggu   = (int)mysqli_fetch_assoc(mysqli_query($conn,
       .chart-grid-layout{grid-template-columns:1fr;}
       .breakdown-bar-wrap{display:none;}
       .chart-canvas-wrap{height:210px;}
+      .view-tabs{width:100%;}
+      .view-tab-btn{flex:1;justify-content:center;padding:8px 10px;font-size:12px;}
     }
   </style>
 </head>
@@ -473,10 +493,10 @@ $pm_menunggu   = (int)mysqli_fetch_assoc(mysqli_query($conn,
     <a href="dashboard.php"         class="nav-link">Dashboard</a>
     <a href="ruangan.php"           class="nav-link">Prasarana</a>
     <a href="barang.php"            class="nav-link">Sarana</a>
-    <a href="stok_habis_pakai.php"  class="nav-link active">Stok Habis Pakai</a>
     <a href="pengguna.php"          class="nav-link">Pengguna<?php if ($pending_count > 0): ?><span class="nav-badge"><?= $pending_count ?></span><?php endif; ?></a>
     <a href="peminjaman.php"        class="nav-link">Peminjaman<?php if ($pm_menunggu > 0): ?><span class="nav-badge"><?= $pm_menunggu ?></span><?php endif; ?></a>
     <a href="pengembalian.php"      class="nav-link">Pengembalian</a>
+    <a href="stok_habis_pakai.php"  class="nav-link active">Stok Habis Pakai</a>
     <a href="../auth/logout.php"    class="nav-link logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
   </div>
   <button class="nav-hamburger" id="hamburgerBtn" onclick="toggleMobileMenu()"><i class="bi bi-list" id="hamburgerIcon"></i></button>
@@ -485,10 +505,10 @@ $pm_menunggu   = (int)mysqli_fetch_assoc(mysqli_query($conn,
   <a href="dashboard.php"         class="nav-link">Dashboard</a>
   <a href="ruangan.php"           class="nav-link">Prasarana</a>
   <a href="barang.php"            class="nav-link">Sarana</a>
-  <a href="stok_habis_pakai.php"  class="nav-link active">Stok Habis Pakai</a>
   <a href="pengguna.php"          class="nav-link">Pengguna<?php if ($pending_count > 0): ?><span class="nav-badge"><?= $pending_count ?></span><?php endif; ?></a>
   <a href="peminjaman.php"        class="nav-link">Peminjaman<?php if ($pm_menunggu > 0): ?><span class="nav-badge"><?= $pm_menunggu ?></span><?php endif; ?></a>
   <a href="pengembalian.php"      class="nav-link">Pengembalian</a>
+  <a href="stok_habis_pakai.php"  class="nav-link active">Stok Habis Pakai</a>
   <a href="../auth/logout.php"    class="nav-link logout">Logout</a>
 </div>
 
@@ -508,180 +528,68 @@ $pm_menunggu   = (int)mysqli_fetch_assoc(mysqli_query($conn,
     </div>
   </div>
 
-  <!-- Summary Pills -->
-  <div class="summary-row">
-    <div class="summary-pill">
-      <div class="summary-pill-icon" style="background:#EEF2FF;color:#6366F1;"><i class="bi bi-box-seam"></i></div>
-      <div>
-        <div class="summary-pill-val" style="color:#6366F1;"><?= number_format($stat_jenis) ?></div>
-        <div class="summary-pill-lbl">Jenis Barang</div>
-      </div>
-    </div>
-    <div class="summary-pill" style="background:#F0FDF4;">
-      <div class="summary-pill-icon" style="background:#DCFCE7;color:#16A34A;"><i class="bi bi-check-circle-fill"></i></div>
-      <div>
-        <div class="summary-pill-val" style="color:#16A34A;"><?= number_format($stat_laik) ?></div>
-        <div class="summary-pill-lbl">Total Stok Tersedia</div>
-      </div>
-    </div>
-    <div class="summary-pill" style="background:var(--amber-light);">
-      <div class="summary-pill-icon" style="background:#FDE68A;color:#D97706;"><i class="bi bi-exclamation-triangle-fill"></i></div>
-      <div>
-        <div class="summary-pill-val" style="color:#D97706;"><?= number_format($stat_menipis) ?></div>
-        <div class="summary-pill-lbl">Stok Menipis (≤5)</div>
-      </div>
-    </div>
-    <div class="summary-pill" style="background:#FEF2F2;">
-      <div class="summary-pill-icon" style="background:#FEE2E2;color:#DC2626;"><i class="bi bi-x-circle-fill"></i></div>
-      <div>
-        <div class="summary-pill-val" style="color:#DC2626;"><?= number_format($stat_habis) ?></div>
-        <div class="summary-pill-lbl">Stok Habis</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Chart Persebaran Penggunaan 1 Bulan -->
-  <div class="card chart-section-card">
-    <div class="card-header" style="flex-wrap:wrap;gap:12px;">
-      <div>
-        <div class="card-title" style="font-size:16px;">
-          <i class="bi bi-pie-chart-fill" style="color:var(--blue-dark);"></i>
-          Persebaran Penggunaan Barang Habis Pakai
-        </div>
-        <div style="font-size:12px;color:var(--muted);margin-top:2px;">
-          Distribusi dan volume pemakaian barang habis pakai dalam <strong style="color:var(--text);"><?= htmlspecialchars($periode_label) ?></strong>
-        </div>
-      </div>
-      <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
-        <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Periode:</span>
-        <select class="chart-period-select" onchange="changeChartPeriode(this.value)">
-          <option value="1_bulan" <?= $chart_periode==='1_bulan'?'selected':'' ?>>1 Bulan Terakhir (30 Hari)</option>
-          <option value="bulan_ini" <?= $chart_periode==='bulan_ini'?'selected':'' ?>>Bulan Ini (<?= date('M Y') ?>)</option>
-          <option value="bulan_lalu" <?= $chart_periode==='bulan_lalu'?'selected':'' ?>>Bulan Lalu</option>
-          <option value="7_hari" <?= $chart_periode==='7_hari'?'selected':'' ?>>7 Hari Terakhir</option>
-          <option value="semua" <?= $chart_periode==='semua'?'selected':'' ?>>Semua Waktu</option>
-        </select>
-      </div>
-    </div>
-
-    <?php if ($total_unit_terpakai > 0): ?>
-    <div style="padding:20px;">
-      <!-- Summary Strip -->
-      <div class="chart-summary-strip">
-        <div class="chart-summary-item">
-          <div class="cs-icon" style="background:#EFF6FF;color:#2563EB;"><i class="bi bi-box-arrow-up"></i></div>
-          <div>
-            <div class="cs-val"><?= number_format($total_unit_terpakai) ?> <span style="font-size:12px;font-weight:500;color:var(--muted);">unit</span></div>
-            <div class="cs-lbl">Total Unit Digunakan</div>
-          </div>
-        </div>
-        <div class="chart-summary-item">
-          <div class="cs-icon" style="background:#ECFDF5;color:#10B981;"><i class="bi bi-tags"></i></div>
-          <div>
-            <div class="cs-val"><?= number_format($total_jenis_terpakai) ?> <span style="font-size:12px;font-weight:500;color:var(--muted);">jenis</span></div>
-            <div class="cs-lbl">Jenis Barang Terpakai</div>
-          </div>
-        </div>
-        <?php if (!empty($chart_items)): ?>
-        <div class="chart-summary-item">
-          <div class="cs-icon" style="background:#FEF3C7;color:#D97706;"><i class="bi bi-trophy"></i></div>
-          <div>
-            <div class="cs-val" style="font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;" title="<?= htmlspecialchars($chart_items[0]['nama_barang']) ?>">
-              <?= htmlspecialchars($chart_items[0]['nama_barang']) ?>
-            </div>
-            <div class="cs-lbl">Terbanyak (<?= number_format($chart_items[0]['total_keluar']) ?> unit)</div>
-          </div>
-        </div>
+  <!-- View Tabs Navigation -->
+  <div class="view-tabs-wrap">
+    <div class="view-tabs">
+      <button type="button" class="view-tab-btn <?= $active_tab==='utama'?'active':'' ?>" id="tabBtnUtama" onclick="switchViewTab('utama')">
+        <i class="bi bi-box-seam"></i>
+        <span>Menu Utama</span>
+      </button>
+      <button type="button" class="view-tab-btn <?= $active_tab==='persebaran'?'active':'' ?>" id="tabBtnPersebaran" onclick="switchViewTab('persebaran')">
+        <i class="bi bi-pie-chart-fill"></i>
+        <span>Persebaran Penggunaan</span>
+        <?php if ($total_unit_terpakai > 0): ?>
+          <span class="view-tab-badge"><?= number_format($total_unit_terpakai) ?> unit</span>
         <?php endif; ?>
-      </div>
-
-      <!-- Chart Grid Layout -->
-      <div class="chart-grid-layout">
-        <!-- Doughnut: Proporsi Persebaran -->
-        <div class="chart-box">
-          <div class="chart-box-title">
-            <span><i class="bi bi-pie-chart" style="color:var(--blue-dark);"></i> Proporsi Persebaran (%)</span>
-            <span style="font-size:11px;font-weight:600;color:var(--muted);"><?= $total_jenis_terpakai ?> item</span>
-          </div>
-          <div class="chart-canvas-wrap">
-            <canvas id="chartPersebaranDoughnut"></canvas>
-          </div>
-        </div>
-
-        <!-- Horizontal Bar: Volume Unit -->
-        <div class="chart-box">
-          <div class="chart-box-title">
-            <span><i class="bi bi-bar-chart-steps" style="color:var(--green);"></i> Volume Penggunaan (Unit)</span>
-            <span style="font-size:11px;font-weight:600;color:var(--muted);">Perbandingan Barang</span>
-          </div>
-          <div class="chart-canvas-wrap">
-            <canvas id="chartPersebaranBar"></canvas>
-          </div>
-        </div>
-      </div>
-
-      <!-- Breakdown Ranking List -->
-      <div class="chart-breakdown-card">
-        <div class="breakdown-header">
-          <span><i class="bi bi-list-ol"></i> Rincian Pemakaian per Barang</span>
-          <span style="font-size:11px;font-weight:600;color:var(--muted);">Diurutkan dari pemakaian terbanyak</span>
-        </div>
-        <?php
-        $rank = 1;
-        foreach ($chart_items as $ci):
-          $pct = $total_unit_terpakai > 0 ? round(($ci['total_keluar'] / $total_unit_terpakai) * 100, 1) : 0;
-          $rank_class = $rank === 1 ? 'top-1' : ($rank === 2 ? 'top-2' : ($rank === 3 ? 'top-3' : ''));
-        ?>
-        <div class="breakdown-item">
-          <div class="breakdown-rank <?= $rank_class ?>">#<?= $rank ?></div>
-          <div class="breakdown-color-dot" style="background:<?= $ci['color'] ?>;"></div>
-          <div class="breakdown-name" title="<?= htmlspecialchars($ci['nama_barang']) ?>">
-            <?= htmlspecialchars($ci['nama_barang']) ?>
-            <?php if (!empty($ci['kode_barang'])): ?>
-              <span style="font-size:10px;color:var(--muted);font-weight:400;margin-left:4px;">(<?= htmlspecialchars($ci['kode_barang']) ?>)</span>
-            <?php endif; ?>
-          </div>
-          <div class="breakdown-bar-wrap">
-            <div class="breakdown-bar">
-              <div class="breakdown-bar-fill" style="width:<?= $pct ?>%;background:<?= $ci['color'] ?>;"></div>
-            </div>
-            <div class="breakdown-pct"><?= $pct ?>%</div>
-          </div>
-          <div class="breakdown-qty" style="color:<?= $ci['color'] ?>;">
-            <?= number_format($ci['total_keluar']) ?> <span style="font-size:11px;font-weight:500;color:var(--muted);">unit</span>
-          </div>
-        </div>
-        <?php $rank++; endforeach; ?>
-      </div>
+      </button>
     </div>
-
-    <?php else: ?>
-    <!-- Empty State for Chart -->
-    <div style="padding:46px 20px;text-align:center;">
-      <div style="width:68px;height:68px;border-radius:50%;background:#F0F7FF;border:2px dashed var(--border);display:inline-flex;align-items:center;justify-content:center;font-size:30px;color:var(--blue-dark);margin-bottom:14px;">
-        <i class="bi bi-pie-chart"></i>
-      </div>
-      <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;font-weight:800;color:var(--text);margin-bottom:6px;">
-        Belum Ada Data Penggunaan dalam Periode Ini
-      </div>
-      <div style="font-size:13px;color:var(--muted);max-width:480px;margin:0 auto 16px;line-height:1.6;">
-        Tidak ada barang habis pakai yang tercatat digunakan/keluar dalam <strong><?= htmlspecialchars($periode_label) ?></strong>.<br>
-        Data visualisasi chart akan terisi otomatis saat Anda mencatat pengurangan stok melalui tombol <strong>Update Stok &rarr; Kurangi Stok</strong> pada tabel di bawah.
-      </div>
-      <div style="display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--blue-dark);background:#EFF6FF;padding:7px 16px;border-radius:20px;font-weight:600;">
-        <i class="bi bi-calendar3"></i> Periode terpilih: <?= htmlspecialchars($periode_label) ?>
-      </div>
-    </div>
-    <?php endif; ?>
   </div>
 
-  <!-- Toolbar -->
-  <div class="toolbar">
-    <div class="toolbar-row">
-      <form method="GET" id="searchFormStok" style="display:flex;gap:0;flex:1;min-width:200px;">
-        <?php if ($filter_ruangan): ?><input type="hidden" name="filter_ruangan" value="<?= $filter_ruangan ?>"><?php endif; ?>
-        <?php if ($filter_stok): ?><input type="hidden" name="filter_stok" value="<?= $filter_stok ?>"><?php endif; ?>
-        <?php if ($per_page!=10): ?><input type="hidden" name="per_page" value="<?= $per_page ?>"><?php endif; ?>
+  <!-- ══════════════════════════════════════════
+       TAB 1: MENU UTAMA (Daftar & Kelola Stok)
+  ══════════════════════════════════════════ -->
+  <div id="tabContentUtama" class="tab-content" style="<?= $active_tab==='utama'?'display:block;':'display:none;' ?>">
+
+    <!-- Summary Pills -->
+    <div class="summary-row">
+      <div class="summary-pill">
+        <div class="summary-pill-icon" style="background:#EEF2FF;color:#6366F1;"><i class="bi bi-box-seam"></i></div>
+        <div>
+          <div class="summary-pill-val" style="color:#6366F1;"><?= number_format($stat_jenis) ?></div>
+          <div class="summary-pill-lbl">Jenis Barang</div>
+        </div>
+      </div>
+      <div class="summary-pill" style="background:#F0FDF4;">
+        <div class="summary-pill-icon" style="background:#DCFCE7;color:#16A34A;"><i class="bi bi-check-circle-fill"></i></div>
+        <div>
+          <div class="summary-pill-val" style="color:#16A34A;"><?= number_format($stat_laik) ?></div>
+          <div class="summary-pill-lbl">Total Stok Tersedia</div>
+        </div>
+      </div>
+      <div class="summary-pill" style="background:var(--amber-light);">
+        <div class="summary-pill-icon" style="background:#FDE68A;color:#D97706;"><i class="bi bi-exclamation-triangle-fill"></i></div>
+        <div>
+          <div class="summary-pill-val" style="color:#D97706;"><?= number_format($stat_menipis) ?></div>
+          <div class="summary-pill-lbl">Stok Menipis (≤5)</div>
+        </div>
+      </div>
+      <div class="summary-pill" style="background:#FEF2F2;">
+        <div class="summary-pill-icon" style="background:#FEE2E2;color:#DC2626;"><i class="bi bi-x-circle-fill"></i></div>
+        <div>
+          <div class="summary-pill-val" style="color:#DC2626;"><?= number_format($stat_habis) ?></div>
+          <div class="summary-pill-lbl">Stok Habis</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="toolbar">
+      <div class="toolbar-row">
+        <form method="GET" id="searchFormStok" style="display:flex;gap:0;flex:1;min-width:200px;">
+          <input type="hidden" name="tab" value="utama">
+          <?php if ($filter_ruangan): ?><input type="hidden" name="filter_ruangan" value="<?= $filter_ruangan ?>"><?php endif; ?>
+          <?php if ($filter_stok): ?><input type="hidden" name="filter_stok" value="<?= $filter_stok ?>"><?php endif; ?>
+          <?php if ($per_page!=10): ?><input type="hidden" name="per_page" value="<?= $per_page ?>"><?php endif; ?>
         <?php if ($chart_periode!=='1_bulan'): ?><input type="hidden" name="chart_periode" value="<?= htmlspecialchars($chart_periode) ?>"><?php endif; ?>
         <div class="search-wrap-inner">
           <i class="bi bi-search search-icon"></i>
@@ -898,6 +806,147 @@ $pm_menunggu   = (int)mysqli_fetch_assoc(mysqli_query($conn,
     <?php endforeach; ?>
   </div>
   <?php endif; ?>
+  </div><!-- /tabContentUtama -->
+
+  <!-- ══════════════════════════════════════════
+       TAB 2: PERSEBARAN PENGGUNAAN (Chart 1 Bulan)
+  ══════════════════════════════════════════ -->
+  <div id="tabContentPersebaran" class="tab-content" style="<?= $active_tab==='persebaran'?'display:block;':'display:none;' ?>">
+    <!-- Chart Persebaran Penggunaan 1 Bulan -->
+    <div class="card chart-section-card">
+      <div class="card-header" style="flex-wrap:wrap;gap:12px;">
+        <div>
+          <div class="card-title" style="font-size:16px;">
+            <i class="bi bi-pie-chart-fill" style="color:var(--blue-dark);"></i>
+            Persebaran Penggunaan Barang Habis Pakai
+          </div>
+          <div style="font-size:12px;color:var(--muted);margin-top:2px;">
+            Distribusi dan volume pemakaian barang habis pakai dalam <strong style="color:var(--text);"><?= htmlspecialchars($periode_label) ?></strong>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px;margin-left:auto;">
+          <span style="font-size:11px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;">Periode:</span>
+          <select class="chart-period-select" onchange="changeChartPeriode(this.value)">
+            <option value="1_bulan" <?= $chart_periode==='1_bulan'?'selected':'' ?>>1 Bulan Terakhir (30 Hari)</option>
+            <option value="bulan_ini" <?= $chart_periode==='bulan_ini'?'selected':'' ?>>Bulan Ini (<?= date('M Y') ?>)</option>
+            <option value="bulan_lalu" <?= $chart_periode==='bulan_lalu'?'selected':'' ?>>Bulan Lalu</option>
+            <option value="7_hari" <?= $chart_periode==='7_hari'?'selected':'' ?>>7 Hari Terakhir</option>
+            <option value="semua" <?= $chart_periode==='semua'?'selected':'' ?>>Semua Waktu</option>
+          </select>
+        </div>
+      </div>
+
+      <?php if ($total_unit_terpakai > 0): ?>
+      <div style="padding:20px;">
+        <!-- Summary Strip -->
+        <div class="chart-summary-strip">
+          <div class="chart-summary-item">
+            <div class="cs-icon" style="background:#EFF6FF;color:#2563EB;"><i class="bi bi-box-arrow-up"></i></div>
+            <div>
+              <div class="cs-val"><?= number_format($total_unit_terpakai) ?> <span style="font-size:12px;font-weight:500;color:var(--muted);">unit</span></div>
+              <div class="cs-lbl">Total Unit Digunakan</div>
+            </div>
+          </div>
+          <div class="chart-summary-item">
+            <div class="cs-icon" style="background:#ECFDF5;color:#10B981;"><i class="bi bi-tags"></i></div>
+            <div>
+              <div class="cs-val"><?= number_format($total_jenis_terpakai) ?> <span style="font-size:12px;font-weight:500;color:var(--muted);">jenis</span></div>
+              <div class="cs-lbl">Jenis Barang Terpakai</div>
+            </div>
+          </div>
+          <?php if (!empty($chart_items)): ?>
+          <div class="chart-summary-item">
+            <div class="cs-icon" style="background:#FEF3C7;color:#D97706;"><i class="bi bi-trophy"></i></div>
+            <div>
+              <div class="cs-val" style="font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:200px;" title="<?= htmlspecialchars($chart_items[0]['nama_barang']) ?>">
+                <?= htmlspecialchars($chart_items[0]['nama_barang']) ?>
+              </div>
+              <div class="cs-lbl">Terbanyak (<?= number_format($chart_items[0]['total_keluar']) ?> unit)</div>
+            </div>
+          </div>
+          <?php endif; ?>
+        </div>
+
+        <!-- Chart Grid Layout -->
+        <div class="chart-grid-layout">
+          <!-- Doughnut: Proporsi Persebaran -->
+          <div class="chart-box">
+            <div class="chart-box-title">
+              <span><i class="bi bi-pie-chart" style="color:var(--blue-dark);"></i> Proporsi Persebaran (%)</span>
+              <span style="font-size:11px;font-weight:600;color:var(--muted);"><?= $total_jenis_terpakai ?> item</span>
+            </div>
+            <div class="chart-canvas-wrap">
+              <canvas id="chartPersebaranDoughnut"></canvas>
+            </div>
+          </div>
+
+          <!-- Horizontal Bar: Volume Unit -->
+          <div class="chart-box">
+            <div class="chart-box-title">
+              <span><i class="bi bi-bar-chart-steps" style="color:var(--green);"></i> Volume Penggunaan (Unit)</span>
+              <span style="font-size:11px;font-weight:600;color:var(--muted);">Perbandingan Barang</span>
+            </div>
+            <div class="chart-canvas-wrap">
+              <canvas id="chartPersebaranBar"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- Breakdown Ranking List -->
+        <div class="chart-breakdown-card">
+          <div class="breakdown-header">
+            <span><i class="bi bi-list-ol"></i> Rincian Pemakaian per Barang</span>
+            <span style="font-size:11px;font-weight:600;color:var(--muted);">Diurutkan dari pemakaian terbanyak</span>
+          </div>
+          <?php
+          $rank = 1;
+          foreach ($chart_items as $ci):
+            $pct = $total_unit_terpakai > 0 ? round(($ci['total_keluar'] / $total_unit_terpakai) * 100, 1) : 0;
+            $rank_class = $rank === 1 ? 'top-1' : ($rank === 2 ? 'top-2' : ($rank === 3 ? 'top-3' : ''));
+          ?>
+          <div class="breakdown-item">
+            <div class="breakdown-rank <?= $rank_class ?>">#<?= $rank ?></div>
+            <div class="breakdown-color-dot" style="background:<?= $ci['color'] ?>;"></div>
+            <div class="breakdown-name" title="<?= htmlspecialchars($ci['nama_barang']) ?>">
+              <?= htmlspecialchars($ci['nama_barang']) ?>
+              <?php if (!empty($ci['kode_barang'])): ?>
+                <span style="font-size:10px;color:var(--muted);font-weight:400;margin-left:4px;">(<?= htmlspecialchars($ci['kode_barang']) ?>)</span>
+              <?php endif; ?>
+            </div>
+            <div class="breakdown-bar-wrap">
+              <div class="breakdown-bar">
+                <div class="breakdown-bar-fill" style="width:<?= $pct ?>%;background:<?= $ci['color'] ?>;"></div>
+              </div>
+              <div class="breakdown-pct"><?= $pct ?>%</div>
+            </div>
+            <div class="breakdown-qty" style="color:<?= $ci['color'] ?>;">
+              <?= number_format($ci['total_keluar']) ?> <span style="font-size:11px;font-weight:500;color:var(--muted);">unit</span>
+            </div>
+          </div>
+          <?php $rank++; endforeach; ?>
+        </div>
+      </div>
+
+      <?php else: ?>
+      <!-- Empty State for Chart -->
+      <div style="padding:46px 20px;text-align:center;">
+        <div style="width:68px;height:68px;border-radius:50%;background:#F0F7FF;border:2px dashed var(--border);display:inline-flex;align-items:center;justify-content:center;font-size:30px;color:var(--blue-dark);margin-bottom:14px;">
+          <i class="bi bi-pie-chart"></i>
+        </div>
+        <div style="font-family:'Plus Jakarta Sans',sans-serif;font-size:16px;font-weight:800;color:var(--text);margin-bottom:6px;">
+          Belum Ada Data Penggunaan dalam Periode Ini
+        </div>
+        <div style="font-size:13px;color:var(--muted);max-width:480px;margin:0 auto 16px;line-height:1.6;">
+          Tidak ada barang habis pakai yang tercatat digunakan/keluar dalam <strong><?= htmlspecialchars($periode_label) ?></strong>.<br>
+          Data visualisasi chart akan terisi otomatis saat Anda mencatat pengurangan stok melalui tab <strong>Menu Utama &rarr; Update Stok &rarr; Kurangi Stok</strong>.
+        </div>
+        <div style="display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--blue-dark);background:#EFF6FF;padding:7px 16px;border-radius:20px;font-weight:600;">
+          <i class="bi bi-calendar3"></i> Periode terpilih: <?= htmlspecialchars($periode_label) ?>
+        </div>
+      </div>
+      <?php endif; ?>
+    </div>
+  </div><!-- /tabContentPersebaran -->
 
 </div>
 <footer>&copy; <?= date('Y') ?> Sistem Inventaris SARPRAS — SMA Negeri 10 Pontianak</footer>
@@ -1047,11 +1096,49 @@ $pm_menunggu   = (int)mysqli_fetch_assoc(mysqli_query($conn,
     return true;
   }
 
+  /* ── Tab Switcher (Menu Utama vs Persebaran Penggunaan) ── */
+  let chartDoughnutInstance = null;
+  let chartBarInstance = null;
+
+  function switchViewTab(tab) {
+    const tabUtama = document.getElementById('tabContentUtama');
+    const tabPersebaran = document.getElementById('tabContentPersebaran');
+    const btnUtama = document.getElementById('tabBtnUtama');
+    const btnPersebaran = document.getElementById('tabBtnPersebaran');
+
+    if (tab === 'persebaran') {
+      if (tabUtama) tabUtama.style.display = 'none';
+      if (tabPersebaran) tabPersebaran.style.display = 'block';
+      if (btnUtama) btnUtama.classList.remove('active');
+      if (btnPersebaran) btnPersebaran.classList.add('active');
+
+      const url = new URL(window.location.href);
+      url.searchParams.set('tab', 'persebaran');
+      window.history.replaceState({}, '', url.toString());
+
+      // Resize charts when tab becomes visible
+      setTimeout(() => {
+        if (chartDoughnutInstance) chartDoughnutInstance.resize();
+        if (chartBarInstance) chartBarInstance.resize();
+      }, 50);
+    } else {
+      if (tabPersebaran) tabPersebaran.style.display = 'none';
+      if (tabUtama) tabUtama.style.display = 'block';
+      if (btnPersebaran) btnPersebaran.classList.remove('active');
+      if (btnUtama) btnUtama.classList.add('active');
+
+      const url = new URL(window.location.href);
+      url.searchParams.delete('tab');
+      window.history.replaceState({}, '', url.toString());
+    }
+  }
+
   /* ── Filters ── */
   function applyFilter(key, val) {
     const url = new URL(window.location.href);
     if (val) url.searchParams.set(key, val);
     else url.searchParams.delete(key);
+    url.searchParams.set('tab', 'utama');
     url.searchParams.set('page', '1');
     window.location.href = url.toString();
   }
@@ -1061,6 +1148,7 @@ $pm_menunggu   = (int)mysqli_fetch_assoc(mysqli_query($conn,
     const url = new URL(window.location.href);
     if (val && val !== '1_bulan') url.searchParams.set('chart_periode', val);
     else url.searchParams.delete('chart_periode');
+    url.searchParams.set('tab', 'persebaran');
     url.searchParams.set('page', '1');
     window.location.href = url.toString();
   }
@@ -1078,7 +1166,7 @@ $pm_menunggu   = (int)mysqli_fetch_assoc(mysqli_query($conn,
   // 1. Doughnut Chart: Persebaran Persentase
   const ctxDoughnut = document.getElementById('chartPersebaranDoughnut');
   if (ctxDoughnut) {
-    new Chart(ctxDoughnut, {
+    chartDoughnutInstance = new Chart(ctxDoughnut, {
       type: 'doughnut',
       data: {
         labels: chartLabels,
@@ -1134,7 +1222,7 @@ $pm_menunggu   = (int)mysqli_fetch_assoc(mysqli_query($conn,
   // 2. Horizontal Bar Chart: Volume Unit
   const ctxBar = document.getElementById('chartPersebaranBar');
   if (ctxBar) {
-    new Chart(ctxBar, {
+    chartBarInstance = new Chart(ctxBar, {
       type: 'bar',
       data: {
         labels: chartLabels,
