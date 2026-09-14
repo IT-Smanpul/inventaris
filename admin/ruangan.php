@@ -534,6 +534,7 @@ $pm_menunggu   = mysqli_fetch_assoc(mysqli_query($conn,
     <a href="dashboard.php"    class="nav-link">Dashboard</a>
     <a href="ruangan.php"      class="nav-link active">Prasarana</a>
     <a href="barang.php"       class="nav-link">Sarana</a>
+    <a href="stok_habis_pakai.php" class="nav-link">Stok Habis Pakai</a>
     <a href="pengguna.php"     class="nav-link">
       Pengguna<?php if ($pending_count > 0): ?><span class="nav-badge"><?= $pending_count ?></span><?php endif; ?>
     </a>
@@ -549,6 +550,7 @@ $pm_menunggu   = mysqli_fetch_assoc(mysqli_query($conn,
   <a href="dashboard.php"      class="nav-link">Dashboard</a>
   <a href="ruangan.php"        class="nav-link active">Prasarana</a>
   <a href="barang.php"         class="nav-link">Sarana</a>
+  <a href="stok_habis_pakai.php" class="nav-link">Stok Habis Pakai</a>
   <a href="pengguna.php"       class="nav-link">Pengguna<?php if ($pending_count > 0): ?><span class="nav-badge"><?= $pending_count ?></span><?php endif; ?></a>
   <a href="peminjaman.php"     class="nav-link">Peminjaman<?php if ($pm_menunggu > 0): ?><span class="nav-badge"><?= $pm_menunggu ?></span><?php endif; ?></a>
   <a href="pengembalian.php"   class="nav-link">Pengembalian</a>
