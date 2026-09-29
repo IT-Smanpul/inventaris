@@ -383,6 +383,8 @@ $pending_count = mysqli_fetch_assoc(mysqli_query($conn,
     "SELECT COUNT(*) as t FROM pengguna WHERE status='pending'"))['t'];
 $pm_menunggu   = mysqli_fetch_assoc(mysqli_query($conn,
     "SELECT COUNT(*) as t FROM peminjaman WHERE status='menunggu'"))['t'];
+$aduan_menunggu = (int)(mysqli_fetch_assoc(mysqli_query($conn,
+    "SELECT COUNT(*) as t FROM pengaduan WHERE status='menunggu'"))['t'] ?? 0);
 ?>
 <!DOCTYPE html>
 <html lang="id">
@@ -614,6 +616,9 @@ $pm_menunggu   = mysqli_fetch_assoc(mysqli_query($conn,
     <a href="pengguna.php"     class="nav-link">Pengguna<?php if ($pending_count > 0): ?><span class="nav-badge"><?= $pending_count ?></span><?php endif; ?></a>
     <a href="peminjaman.php"   class="nav-link">Peminjaman<?php if ($pm_menunggu > 0): ?><span class="nav-badge"><?= $pm_menunggu ?></span><?php endif; ?></a>
     <a href="pengembalian.php" class="nav-link">Pengembalian</a>
+    <a href="pengaduan.php"    class="nav-link">
+      Pengaduan<?php if ($aduan_menunggu > 0): ?><span class="nav-badge"><?= $aduan_menunggu ?></span><?php endif; ?>
+    </a>
     <a href="../auth/logout.php" class="nav-link logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
   </div>
   <button class="nav-hamburger" id="hamburgerBtn" onclick="toggleMobileMenu()"><i class="bi bi-list" id="hamburgerIcon"></i></button>
@@ -626,6 +631,7 @@ $pm_menunggu   = mysqli_fetch_assoc(mysqli_query($conn,
   <a href="pengguna.php"     class="nav-link">Pengguna<?php if ($pending_count > 0): ?><span class="nav-badge"><?= $pending_count ?></span><?php endif; ?></a>
   <a href="peminjaman.php"   class="nav-link">Peminjaman<?php if ($pm_menunggu > 0): ?><span class="nav-badge"><?= $pm_menunggu ?></span><?php endif; ?></a>
   <a href="pengembalian.php" class="nav-link">Pengembalian</a>
+  <a href="pengaduan.php"    class="nav-link">Pengaduan<?php if ($aduan_menunggu > 0): ?><span class="nav-badge"><?= $aduan_menunggu ?></span><?php endif; ?></a>
   <a href="../auth/logout.php" class="nav-link logout">Logout</a>
 </div>
 
