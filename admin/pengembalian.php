@@ -177,6 +177,10 @@ $terlambat_count   = mysqli_fetch_assoc(mysqli_query($conn,
      WHERE status IN ('dipinjam','menunggu_kembali') AND waktu_selesai IS NOT NULL
        AND CONCAT(tanggal_pinjam,' ',waktu_selesai) < NOW()"))['t'];
 
+$pending_count = (int)(mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t FROM pengguna WHERE status='pending'"))['t'] ?? 0);
+$pm_menunggu   = (int)(mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t FROM peminjaman WHERE status='menunggu'"))['t'] ?? 0);
+$aduan_menunggu = (int)(mysqli_fetch_assoc(mysqli_query($conn,"SELECT COUNT(*) as t FROM pengaduan WHERE status='menunggu'"))['t'] ?? 0);
+
 $kondisi_cfg = [
     'baik'         => ['Baik',         'badge-success'],
     'rusak_ringan' => ['Rusak Ringan',  'badge-warning'],
@@ -404,6 +408,9 @@ $kondisi_cfg = [
       <?php if ($pm_menunggu > 0): ?><span class="nav-badge"><?= $pm_menunggu ?></span><?php endif; ?>
     </a>
     <a href="pengembalian.php" class="nav-link active">Pengembalian</a>
+    <a href="pengaduan.php"    class="nav-link">
+      Pengaduan<?php if ($aduan_menunggu > 0): ?><span class="nav-badge"><?= $aduan_menunggu ?></span><?php endif; ?>
+    </a>
     <a href="../auth/logout.php" class="nav-link logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
   </div>
 
@@ -428,6 +435,7 @@ $kondisi_cfg = [
     <?php if ($pm_menunggu > 0): ?><span class="nav-badge"><?= $pm_menunggu ?></span><?php endif; ?>
   </a>
   <a href="pengembalian.php"   class="nav-link active">Pengembalian</a>
+  <a href="pengaduan.php"      class="nav-link">Pengaduan<?php if ($aduan_menunggu > 0): ?><span class="nav-badge"><?= $aduan_menunggu ?></span><?php endif; ?></a>
   <a href="../auth/logout.php" class="nav-link logout">Logout</a>
 </div>
 
