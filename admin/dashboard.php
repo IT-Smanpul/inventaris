@@ -62,6 +62,9 @@ $total_tidak_laik = (int)$laik_row['total_tidak_laik'];
 // Pengguna pending
 $pending_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM pengguna WHERE status='pending'"))['t'];
 
+// Pengaduan menunggu
+$aduan_menunggu = (int)(mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM pengaduan WHERE status='menunggu'"))['t'] ?? 0);
+
 // Barang bisa dipinjam vs tidak
 $bisa_pinjam    = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM barang WHERE bisa_dipinjam=1"))['t'];
 $tidak_pinjam   = $total_barang - $bisa_pinjam;
@@ -699,6 +702,10 @@ $today = date('l, d F Y');
     </a>
     <a href="pengembalian.php" class="nav-link">Pengembalian</a>
     <a href="stok_habis_pakai.php" class="nav-link">Stok Habis Pakai</a>
+    <a href="pengaduan.php" class="nav-link">
+      Pengaduan
+      <?php if ($aduan_menunggu > 0): ?><span class="nav-badge"><?= $aduan_menunggu ?></span><?php endif; ?>
+    </a>
     <a href="../auth/logout.php" class="nav-link logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
   </div>
 
@@ -723,7 +730,10 @@ $today = date('l, d F Y');
   </a>
   <a href="pengembalian.php"   class="nav-link">Pengembalian</a>
   <a href="stok_habis_pakai.php" class="nav-link">Stok Habis Pakai</a>
-  <a href="../auth/logout.php" class="nav-link logout">Logout</a>
+  <a href="pengaduan.php"        class="nav-link">
+    Pengaduan<?php if ($aduan_menunggu > 0): ?><span class="nav-badge"><?= $aduan_menunggu ?></span><?php endif; ?>
+  </a>
+  <a href="../auth/logout.php"   class="nav-link logout">Logout</a>
 </div>
 
 
@@ -766,6 +776,16 @@ $today = date('l, d F Y');
     <div>
       <strong><?= $pending_count ?> akun pengguna menunggu persetujuan.</strong>
       <a href="pengguna.php">Kelola pengguna</a> untuk menyetujui atau menolak.
+    </div>
+  </div>
+  <?php endif; ?>
+
+  <?php if ($aduan_menunggu > 0): ?>
+  <div class="alert-banner alert-warning" style="background:#FFFBEB;border:1px solid #FDE68A;color:#92400E;">
+    <i class="bi bi-megaphone-fill"></i>
+    <div>
+      <strong><?= $aduan_menunggu ?> laporan pengaduan kerusakan baru masuk.</strong>
+      <a href="pengaduan.php?status=menunggu" style="color:#B45309;font-weight:700;">Lihat dan tanggapi</a> pengaduan sarpras sekarang.
     </div>
   </div>
   <?php endif; ?>
