@@ -344,6 +344,15 @@ if ($total_pengguna == 0) $total_pengguna = '0';
       <strong>SMA Negeri 10 Pontianak</strong>
     </div>
   </a>
+
+  <div style="display:flex;align-items:center;gap:12px;">
+    <a href="pengaduan.php" style="display:inline-flex;align-items:center;gap:6px;text-decoration:none;font-family:'Plus Jakarta Sans',sans-serif;font-size:13px;font-weight:700;color:var(--blue-dark);background:#EFF6FF;border:1.5px solid var(--border);padding:7px 16px;border-radius:8px;transition:all .2s;">
+      <i class="bi bi-megaphone-fill" style="color:var(--amber);"></i> Pengaduan
+    </a>
+    <a href="auth/login.php" class="btn-nav-login" style="padding:7px 18px;font-size:13px;">
+      <i class="bi bi-box-arrow-in-right"></i> Masuk
+    </a>
+  </div>
 </nav>
 
 
@@ -364,9 +373,12 @@ if ($total_pengguna == 0) $total_pengguna = '0';
       Catat, pantau, dan kelola inventaris sekolah secara efisien dalam satu sistem terpadu.
     </p>
 
-    <div class="hero-cta">
+    <div class="hero-cta" style="display:flex;gap:12px;flex-wrap:wrap;align-items:center;">
       <a href="auth/login.php" class="btn-primary-cta">
         <i class="bi bi-box-arrow-in-right"></i> Masuk ke Sistem
+      </a>
+      <a href="pengaduan.php" class="btn-secondary-cta" style="display:inline-flex;align-items:center;gap:8px;padding:13px 22px;border-radius:10px;text-decoration:none;font-family:'Plus Jakarta Sans',sans-serif;font-size:14px;font-weight:700;background:#FFFBEB;color:#D97706;border:1.5px solid #FDE68A;transition:all .2s;box-shadow:0 2px 10px rgba(217,119,6,.12);">
+        <i class="bi bi-megaphone-fill"></i> Layanan Pengaduan
       </a>
     </div>
 
