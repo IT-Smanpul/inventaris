@@ -366,6 +366,44 @@ ALTER TABLE `riwayat_stok`
 ALTER TABLE `riwayat_stok`
   ADD CONSTRAINT `riwayat_stok_ibfk_1` FOREIGN KEY (`id_barang`) REFERENCES `barang` (`id_barang`) ON DELETE CASCADE;
 
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `pengaduan`
+--
+
+CREATE TABLE `pengaduan` (
+  `id_pengaduan` int NOT NULL,
+  `nama_prasarana` varchar(150) NOT NULL,
+  `id_ruangan` int DEFAULT NULL,
+  `nama_pelapor` varchar(100) DEFAULT NULL,
+  `kontak_pelapor` varchar(50) DEFAULT NULL,
+  `deskripsi` text NOT NULL,
+  `foto` varchar(255) DEFAULT NULL,
+  `status` enum('menunggu','diproses','selesai','ditolak') NOT NULL DEFAULT 'menunggu',
+  `tanggapan` text DEFAULT NULL,
+  `tanggal_pengaduan` datetime NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+--
+-- Indexes for table `pengaduan`
+--
+ALTER TABLE `pengaduan`
+  ADD PRIMARY KEY (`id_pengaduan`),
+  ADD KEY `id_ruangan` (`id_ruangan`);
+
+--
+-- AUTO_INCREMENT for table `pengaduan`
+--
+ALTER TABLE `pengaduan`
+  MODIFY `id_pengaduan` int NOT NULL AUTO_INCREMENT;
+
+--
+-- Constraints for table `pengaduan`
+--
+ALTER TABLE `pengaduan`
+  ADD CONSTRAINT `pengaduan_ibfk_1` FOREIGN KEY (`id_ruangan`) REFERENCES `ruangan` (`id_ruangan`) ON DELETE SET NULL;
+
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
