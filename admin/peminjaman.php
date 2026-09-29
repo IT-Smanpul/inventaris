@@ -235,6 +235,7 @@ $stats_pm['total'] = array_sum($stats_pm);
 /* ── Hitung badge status ── */
 $pending_count = mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM pengguna WHERE status='pending'"))['t'];
 $pm_menunggu = $stats_pm['menunggu'];
+$aduan_menunggu = (int)(mysqli_fetch_assoc(mysqli_query($conn, "SELECT COUNT(*) as t FROM pengaduan WHERE status='menunggu'"))['t'] ?? 0);
 
 /* ── Data untuk form ── */
 $barang_list = [];
@@ -514,6 +515,9 @@ $status_cfg = [
       <?php if ($pm_menunggu > 0): ?><span class="nav-badge"><?= $pm_menunggu ?></span><?php endif; ?>
     </a>
     <a href="pengembalian.php" class="nav-link">Pengembalian</a>
+    <a href="pengaduan.php"    class="nav-link">
+      Pengaduan<?php if ($aduan_menunggu > 0): ?><span class="nav-badge"><?= $aduan_menunggu ?></span><?php endif; ?>
+    </a>
     <a href="../auth/logout.php" class="nav-link logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
   </div>
 
@@ -538,6 +542,7 @@ $status_cfg = [
     <?php if ($pm_menunggu > 0): ?><span class="nav-badge"><?= $pm_menunggu ?></span><?php endif; ?>
   </a>
   <a href="pengembalian.php"   class="nav-link">Pengembalian</a>
+  <a href="pengaduan.php"      class="nav-link">Pengaduan<?php if ($aduan_menunggu > 0): ?><span class="nav-badge"><?= $aduan_menunggu ?></span><?php endif; ?></a>
   <a href="../auth/logout.php" class="nav-link logout">Logout</a>
 </div>
 
