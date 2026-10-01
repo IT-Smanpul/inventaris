@@ -285,45 +285,7 @@ while ($rv = mysqli_fetch_assoc($rq)) $ruangan_list[] = $rv;
 <body>
 
 <!-- ── NAVBAR ── -->
-<nav class="navbar">
-  <a href="dashboard.php" class="nav-brand">
-    <img src="../assets/logo.png" alt="Logo">
-    <div class="nav-brand-text">
-      <strong>Inventaris SARPRAS</strong>
-      <span>SMAN 10 Pontianak</span>
-    </div>
-  </a>
-
-  <!-- Desktop links -->
-  <div class="nav-links">
-    <a href="dashboard.php"  class="nav-link active">Katalog Barang</a>
-    <a href="riwayat.php"    class="nav-link">Peminjaman Saya</a>
-    <a href="profil.php"     class="nav-link">Profil</a>
-  </div>
-
-  <!-- User info + logout -->
-  <div class="nav-user">
-    <a href="profil.php" class="nav-avatar" title="Profil Saya"><?= strtoupper(substr($nama_user,0,1)) ?></a>
-    <div>
-      <div class="nav-user-name"><?= htmlspecialchars($nama_user) ?></div>
-      <div class="nav-user-role"><?= ucfirst($role_user) ?></div>
-    </div>
-    <a href="../auth/logout.php" class="nav-logout"><i class="bi bi-box-arrow-right"></i> Keluar</a>
-  </div>
-
-  <!-- Hamburger -->
-  <button class="nav-hamburger" id="hamburgerBtn" onclick="toggleMobileMenu()" aria-label="Menu">
-    <i class="bi bi-list" id="hamburgerIcon"></i>
-  </button>
-
-  <!-- Mobile dropdown -->
-  <div class="nav-mobile-menu" id="mobileMenu">
-    <a href="dashboard.php" class="nav-link active">Katalog Barang</a>
-    <a href="riwayat.php"   class="nav-link">Peminjaman Saya</a>
-    <a href="profil.php"    class="nav-link">Profil Saya</a>
-    <a href="../auth/logout.php" class="nav-link" style="color:#FCA5A5;">Keluar</a>
-  </div>
-</nav>
+<?php require_once "../components/user_navbar.php"; ?>
 
 <div class="page-wrapper">
 

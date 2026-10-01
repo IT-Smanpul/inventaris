@@ -213,48 +213,7 @@ $initials    = strtoupper(substr($user['nama'], 0, 1));
 <body>
 
 <!-- ── NAVBAR ── -->
-<nav class="navbar">
-  <a href="dashboard.php" class="nav-brand">
-    <img src="../assets/logo.png" alt="Logo">
-    <div class="nav-brand-text">
-      <strong>Inventaris SARPRAS</strong>
-      <span>SMAN 10 Pontianak</span>
-    </div>
-  </a>
-
-  <div class="nav-links">
-    <a href="dashboard.php" class="nav-link">Katalog Barang</a>
-    <a href="riwayat.php"   class="nav-link">Peminjaman Saya</a>
-    <a href="profil.php"    class="nav-link active">Profil</a>
-  </div>
-
-  <div class="nav-user">
-    <a href="profil.php" class="nav-avatar" title="Profil"><?= $initials ?></a>
-    <div>
-      <div class="nav-user-name"><?= htmlspecialchars($nama_user) ?></div>
-      <div class="nav-user-role"><?= ucfirst($role_user) ?></div>
-    </div>
-    <a href="../auth/logout.php" class="nav-logout"><i class="bi bi-box-arrow-right"></i> Keluar</a>
-  </div>
-
-  <button class="nav-hamburger" id="hamburgerBtn" onclick="toggleMobileMenu()" aria-label="Menu">
-    <i class="bi bi-list" id="hamburgerIcon"></i>
-  </button>
-
-  <div class="nav-mobile-menu" id="mobileMenu">
-    <div class="mobile-user-info">
-      <div class="mobile-avatar"><?= $initials ?></div>
-      <div>
-        <div style="font-size:13px;font-weight:700;color:white;"><?= htmlspecialchars($nama_user) ?></div>
-        <div style="font-size:11px;color:rgba(255,255,255,.5);"><?= ucfirst($role_user) ?></div>
-      </div>
-    </div>
-    <a href="dashboard.php" class="nav-link">Katalog Barang</a>
-    <a href="riwayat.php"   class="nav-link">Peminjaman Saya</a>
-    <a href="profil.php"    class="nav-link active">Profil Saya</a>
-    <a href="../auth/logout.php" class="nav-link" style="color:#FCA5A5;">Keluar</a>
-  </div>
-</nav>
+<?php require_once "../components/user_navbar.php"; ?>
 
 <div class="page-wrapper">
 

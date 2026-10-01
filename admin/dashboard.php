@@ -678,63 +678,7 @@ $today = date('l, d F Y');
 <body>
 
 <!-- ══ NAVBAR ══ -->
-<nav class="navbar">
-  <a href="dashboard.php" class="nav-brand">
-    <img src="../assets/logo.png" alt="Logo">
-    <div class="nav-brand-text">
-      <strong>Inventaris SARPRAS</strong>
-      <span>SMAN 10 Pontianak</span>
-    </div>
-  </a>
-
-  <!-- Desktop -->
-  <div class="nav-links">
-    <a href="dashboard.php"    class="nav-link active">Dashboard</a>
-    <a href="ruangan.php"      class="nav-link">Prasarana</a>
-    <a href="barang.php"       class="nav-link">Sarana</a>
-    <a href="pengguna.php"     class="nav-link">
-      Pengguna
-      <?php if ($pending_count > 0): ?><span class="nav-badge"><?= $pending_count ?></span><?php endif; ?>
-    </a>
-    <a href="peminjaman.php"   class="nav-link">
-      Peminjaman
-      <?php if ($pm_menunggu > 0): ?><span class="nav-badge"><?= $pm_menunggu ?></span><?php endif; ?>
-    </a>
-    <a href="pengembalian.php" class="nav-link">Pengembalian</a>
-    <a href="stok_habis_pakai.php" class="nav-link">Stok Habis Pakai</a>
-    <a href="pengaduan.php" class="nav-link">
-      Pengaduan
-      <?php if ($aduan_menunggu > 0): ?><span class="nav-badge"><?= $aduan_menunggu ?></span><?php endif; ?>
-    </a>
-    <a href="../auth/logout.php" class="nav-link logout"><i class="bi bi-box-arrow-right"></i> Logout</a>
-  </div>
-
-  <!-- Hamburger -->
-  <button class="nav-hamburger" id="hamburgerBtn" onclick="toggleMobileMenu()" aria-label="Menu">
-    <i class="bi bi-list" id="hamburgerIcon"></i>
-  </button>
-</nav>
-
-<!-- Mobile Menu -->
-<div class="nav-mobile-menu" id="mobileMenu">
-  <a href="dashboard.php"      class="nav-link active">Dashboard</a>
-  <a href="ruangan.php"        class="nav-link">Prasarana</a>
-  <a href="barang.php"         class="nav-link">Sarana</a>
-  <a href="pengguna.php"       class="nav-link">
-    Pengguna
-    <?php if ($pending_count > 0): ?><span class="nav-badge"><?= $pending_count ?></span><?php endif; ?>
-  </a>
-  <a href="peminjaman.php"     class="nav-link">
-    Peminjaman
-    <?php if ($pm_menunggu > 0): ?><span class="nav-badge"><?= $pm_menunggu ?></span><?php endif; ?>
-  </a>
-  <a href="pengembalian.php"   class="nav-link">Pengembalian</a>
-  <a href="stok_habis_pakai.php" class="nav-link">Stok Habis Pakai</a>
-  <a href="pengaduan.php"        class="nav-link">
-    Pengaduan<?php if ($aduan_menunggu > 0): ?><span class="nav-badge"><?= $aduan_menunggu ?></span><?php endif; ?>
-  </a>
-  <a href="../auth/logout.php"   class="nav-link logout">Logout</a>
-</div>
+<?php require_once "../components/admin_navbar.php"; ?>
 
 
 <!-- ══ PAGE ══ -->
